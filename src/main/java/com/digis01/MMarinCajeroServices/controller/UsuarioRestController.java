@@ -4,7 +4,6 @@ package com.digis01.MMarinCajeroServices.controller;
 import com.digis01.MMarinCajeroServices.DAO.IUsuario;
 import com.digis01.MMarinCajeroServices.JPA.Result;
 import com.digis01.MMarinCajeroServices.JPA.Usuario;
-import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("usuarioapi")
-public class UsuarioController {
+public class UsuarioRestController {
     
     @Autowired
     private IUsuario iUsuario;
@@ -37,12 +36,25 @@ public class UsuarioController {
     }
     @PostMapping("/login")
     public ResponseEntity Login(@RequestBody Usuario usuario){
-        try {
-            Result result = new Result();            
-            return ResponseEntity.ok(result);
-            
+        Result result = new Result();      
+        try {                  
+            Usuario usuarioBd = this.iUsuario.findByUserName(usuario.getUserName()) ;
+            if ((usuarioBd == null)) {
+                result.errorMessage = "Credenciales invalidas";
+                return ResponseEntity.status(401).body(result);
+            }
+            if (!usuarioBd.getPassword().equals(usuario.getPassword())) {         
+                result.errorMessage = "Credenciales invalidas";
+                return ResponseEntity.status(401).body(result);
+            }
+            result.correct = true;
+            result.object = usuarioBd;            
+            return ResponseEntity.ok(result);            
         } catch (Exception e) {
-            return null;
+            result.correct = false;
+            result.errorMessage = e.getLocalizedMessage();
+            result.ex = e;
+            return ResponseEntity.internalServerError().body(result);
         }
     }
     

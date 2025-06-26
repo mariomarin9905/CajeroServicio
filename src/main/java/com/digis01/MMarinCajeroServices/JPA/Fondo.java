@@ -22,7 +22,7 @@ public class Fondo {
     @Column(name = "cantidad")
     private int Cantidad;
     @Column(name = "denominacion")
-    private int Denominacion;
+    private double Denominacion;
     public int getIdFondo() {
         return IdFondo;
     }
@@ -44,11 +44,11 @@ public class Fondo {
         this.Cantidad = Cantidad;
     }
 
-    public int getDenominacion() {
+    public double getDenominacion() {
         return Denominacion;
     }
 
-    public void setDenominacion(int Denominacion) {
+    public void setDenominacion(double Denominacion) {
         this.Denominacion = Denominacion;
     }
 
