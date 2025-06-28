@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,21 +36,26 @@ public class CajeroRestController {
                 result.errorMessage = "Saldo de usuario insuficiente";
                 return ResponseEntity.badRequest().body(result);
             }
-            List<Fondo> fondos = this.iFondo.findAll();            
+            List<Fondo> fondos = this.iFondo.findAll();
             double totalFondo = this.SumaFondos(fondos);
             if (retiro > totalFondo) {
                 result.correct = false;
                 result.errorMessage = "Fondos del cajero insuficiente";
                 return ResponseEntity.status(404).body(result);
             }
-            if (retiro % fondos.get(fondos.size() - 1).getDenominacion() != 0) {
+            if (retiro <= 0) {
+                result.correct = false;
+                result.errorMessage = "No es posible realizar la operacion";
+                return ResponseEntity.badRequest().body(result);
+            }
+            if ((retiro % fondos.get(fondos.size() - 1).getDenominacion() != 0)) {
                 result.correct = false;
                 result.errorMessage = "No es posible hacer la operacion dado la menor denominacion ";
                 return ResponseEntity.status(400).body(result);
             }
             List<Fondo> resultado = this.calculaRetiro(retiro, fondos);
             this.iFondo.saveAll(fondos);
-            usuario.setSaldo((usuario.getSaldo()-retiro));
+            usuario.setSaldo((usuario.getSaldo() - retiro));
             this.iUsuario.save(usuario);
             result.correct = true;
             result.object = resultado;
@@ -67,15 +73,15 @@ public class CajeroRestController {
         }
         return suma;
     }
-    
+
     private List<Fondo> calculaRetiro(double retiro, List<Fondo> fondos) {
         List<Fondo> resultado = new ArrayList();
         int i = 0;
-        while ((retiro != 0) && (i < fondos.size() - 1)) {
+        while ((retiro != 0) && (i < fondos.size())) {
             Fondo fondoAux = new Fondo();
             Fondo fondo = fondos.get(i);
             double divisor = Math.min(retiro / fondo.getDenominacion(), fondo.getCantidad());
-            if (divisor >= 2) {
+            if (divisor >= 1) {
                 int multiplo = (int) divisor;
                 retiro -= (multiplo * fondo.getDenominacion());
                 fondoAux.setIdFondo(fondo.getIdFondo());
@@ -88,5 +94,19 @@ public class CajeroRestController {
             i++;
         }
         return resultado;
+    }
+    @GetMapping("/fondo")    
+    public  ResponseEntity Fondo(){
+        Result result = new Result();
+        try {
+            List<Fondo> fondos = this.iFondo.findAll();
+            result.object = this.SumaFondos(fondos);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+           result.correct = false;
+           result.errorMessage = e.getLocalizedMessage();
+           result.ex = e;           
+            return ResponseEntity.internalServerError().body(result);
+        }
     }
 }
